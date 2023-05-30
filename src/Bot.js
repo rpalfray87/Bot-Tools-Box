@@ -1,15 +1,18 @@
-import { channel } from 'diagnostics_channel';
+import config from '../bot.config.json' assert { type: "json" };
 import fs from 'fs';
 
 export default class Bot {
+    
     constructor(id, channels) {
+        console.log(config.fileDirectory)
         this.id = id;
         this.channels = channels;
-        this.fileDirectory = "./Ressources/";
-        this.extensionFile = ".txt";
+        this.fileDirectory = config.fileDirectory;
+        this.extensionFile = config.fileExtension;
         this.ressourcesId = this.getRessourcesId();
         this.channelsList = this.listChannelsFromParentId(this.ressourcesId);
     }
+
     getId() {
         return this.id;
     }
