@@ -1,4 +1,4 @@
 node_modules
 .env
-Ressources/*.txt
+Ressources/*.md
 message.txt
