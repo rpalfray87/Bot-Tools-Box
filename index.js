@@ -9,8 +9,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] }); //
 
 client.once(Events.ClientReady, c => {
 	console.log(`Ready! Logged in as ${c.user.id}`);
-    const channels = client.channels.cache;
-    const bot = new Bot(c.user.id, channels);
+    const bot = new Bot(c.user.id, c);
     bot.start();
 });
 

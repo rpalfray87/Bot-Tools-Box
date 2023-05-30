@@ -3,18 +3,53 @@ import fs from 'fs';
 
 export default class Bot {
     
-    constructor(id, channels) {
-        console.log(config.fileDirectory)
+    constructor(id, client) {
         this.id = id;
-        this.channels = channels;
+        this.client = client;
+        this.channels = client.channels.cache;
         this.fileDirectory = config.fileDirectory;
         this.extensionFile = config.fileExtension;
         this.ressourcesId = this.getRessourcesId();
         this.channelsList = this.listChannelsFromParentId(this.ressourcesId);
     }
 
-    getId() {
-        return this.id;
+    // start the bot
+    async start() {
+        console.log("Bot started");
+        //Check if file already exist for all channels, if not create it
+        await this.checkFiles()
+        this.client.on("channelCreate", (channel) => {
+            if(channel.parentId == this.ressourcesId) {
+                console.log("Nouveau channel créé : " + channel.name);
+                this.channelsList.push({name : channel.name, id : channel.id});
+                this.createFile(channel.name + this.extensionFile)
+                this.updateMessagesOnFileChange();
+            }
+        });
+        this.updateMessagesOnFileChange();
+        
+    }
+
+    // update messages when file change
+    updateMessagesOnFileChange() {
+        this.channelsList.forEach(channel => {
+            fs.watchFile(this.fileDirectory + channel.name + this.extensionFile, (curr, prev) => {
+                console.log("Content updated from : " + channel.name + this.extensionFile);
+                this.recoverMessageFromChannelId(channel.id).then(msg => {
+                    let contentTxtFile = this.recoverContentFileFromChannelName(channel.name)
+                    if (contentTxtFile === "" || contentTxtFile === null || contentTxtFile === undefined) {
+                        contentTxtFile = "Contenu ou fichier manquant."
+                    }
+                    if (msg != null) {
+                        console.log("Edit message.")
+                        this.editMessageInChannelId(channel.id, msg.id, contentTxtFile);
+                    } else {
+                        console.log("Write new message.")
+                        this.writeMessageInChannelId(channel.id, contentTxtFile)
+                    }
+                });
+            });
+        })
     }
 
     // recover ressources channel id
@@ -65,26 +100,6 @@ export default class Bot {
         return message
     }
 
-    // start the bot
-    async start() {
-        console.log("Bot started");
-        //Check if file already exist for all channels, if not create it
-        await this.checkFiles()
-        this.channelsList.forEach(channel => {
-            fs.watchFile(this.fileDirectory + channel.name + this.extensionFile, (curr, prev) => {
-                console.log("Content updated from : " + channel.name + this.extensionFile);
-                this.recoverMessageFromChannelId(channel.id).then(msg => {
-                    const contentTxtFile = this.recoverContentFileFromChannelName(channel.name)
-                    if (msg != null) {
-                        this.editMessageInChannelId(channel.id, msg.id, contentTxtFile);
-                    } else {
-                        this.writeMessageInChannelId(channel.id, contentTxtFile)
-                    }
-                });
-            });
-        })
-    }
-
     // recover content from file for a specific channel
     recoverContentFileFromChannelName(channelName) {
         const file = this.fileDirectory + channelName + this.extensionFile
@@ -96,9 +111,9 @@ export default class Bot {
 
     // create a new file
     createFile(fileName) {
-        fs.writeFile(this.fileDirectory + fileName, 'utf-8', (err) => {
+        fs.writeFile(this.fileDirectory + fileName, 'Contenu manquant', (err) => {
             if (err) throw err;
-            console.log('The file has been saved!');
+            console.log('The file has been created !');
         });
     }
 
