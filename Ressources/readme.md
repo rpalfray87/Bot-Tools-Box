@@ -1,0 +1,1 @@
+Dossier de stockage des fichiers txt pour le bot
